@@ -1,0 +1,386 @@
+package com.paul.aespubdev;
+
+import com.alibaba.fastjson.JSON;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+/**
+ * AES加密128位CBC模式工具类
+ */
+public class AesPubDev {
+
+    public static void main(String[] args) throws Exception {
+        System.out.println(getToken("7f16c250-cf14-4726-966e-8efdb761fea3","mxfnkl75210@chacuo.net"));
+        System.out.println(Decrypt("4gXRQw9qfukSXa4MlGTgAAD2i0eNiJF53fbh1PCuidPefXLNzPEpn4aSIUZWKfLyYCcKJKbSnwuLpViHKsiXDJKzcVtsAFJ1IPGUEogaNws="));
+    }
+
+    public static String getToken(String devid,String email) throws Exception {
+        Map<String,Object> map = new HashMap<>(4);
+        map.put("developer_id", devid);
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS'Z'");
+        String content = dateTimeFormatter.format(LocalDateTime.now());
+        System.out.println(content);
+//        Long content = System.currentTimeMillis()/1000;
+        map.put("send_time", content);
+        map.put("email",email);
+        String token = JSON.toJSONString(map);
+        return Encrypt(token);
+    }
+
+    //解密密钥(自行随机生成)
+    public static final String KEY = "397A6FF199BFBB0738182C94BAC2570E";//密钥key
+    public static final String IV  = "397A6FF199BFBB07";//向量iv
+
+    //加密
+    public static String Encrypt(String content) throws Exception {
+        byte[] raw = KEY.getBytes(StandardCharsets.UTF_8);
+        SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+//        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");//"算法/模式/补码方式"
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");//"算法/模式/补码方式"
+        //使用CBC模式，需要一个向量iv，可增加加密算法的强度
+        IvParameterSpec ips = new IvParameterSpec(IV.getBytes());
+//        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, (AlgorithmParameters) null);
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ips );
+        byte[] encrypted = cipher.doFinal(content.getBytes());
+        return new BASE64Encoder().encode(encrypted);
+    }
+
+    //解密
+    public static String Decrypt(String content) {
+        try {
+            byte[] raw = KEY.getBytes(StandardCharsets.UTF_8);
+            SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+//            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            IvParameterSpec ips = new IvParameterSpec(IV.getBytes());
+//            cipher.init(Cipher.DECRYPT_MODE, skeySpec, (AlgorithmParameters) null);
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ips);
+            byte[] encrypted1 = new BASE64Decoder().decodeBuffer(content);
+            try {
+                byte[] original = cipher.doFinal(encrypted1);
+                return new String(original);
+            } catch (Exception e) {
+                System.out.println(e);
+                return null;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+            return null;
+        }
+    }
+
+    //获取参数的字典排序
+    private static String getOrderMap(Map<String,Object> maps){
+        List<String> paramNames = new ArrayList<String>();
+        for(Map.Entry<String,Object> entry : maps.entrySet()){
+            paramNames.add(entry.getValue().toString());
+        }
+        Collections.sort(paramNames);
+        StringBuilder paramStr = new StringBuilder();
+        for(String paramName : paramNames){
+            paramStr.append(paramName);
+        }
+        return paramStr.toString();
+    }
+
+}
+
+
+
+
+
+
+package com.paul.test;
+
+import com.alibaba.fastjson.JSON;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+/**
+ * AES加密128位CBC模式工具类
+ */
+@SuppressWarnings("ALL")
+public class AESDevelopPublish {
+
+    public static void main(String[] args) throws Exception {
+        System.out.println(getToken("7f16c250-cf14-4726-966e-8efdb761fea3"));
+        System.out.println(Decrypt("eLtpLSoKpjxXbSizV2BEACb2G4OzR/XV2TRIfVMdDPIrZz7JS/ySaQsRLYOZsAmNvsk0nX8rt+Q+aYgcBcnMBoDmkk3RD3KqQ6dQMLQp+3k="));
+    }
+
+    public static String getToken(String uid) throws Exception {
+        Map<String,Object> map = new HashMap<>(4);
+        map.put("user_id", uid);
+        Long content = System.currentTimeMillis()/1000+60*60*24*3;
+        map.put("time", content);
+        String token = JSON.toJSONString(map);
+        return Encrypt(token);
+    }
+
+    //解密密钥(自行随机生成)
+    public static final String KEY = "397A6FF199BFBB0738182C94BAC2570E";//密钥key
+    public static final String IV  = "397A6FF199BFBB07";//向量iv
+
+    //加密
+    public static String Encrypt(String content) throws Exception {
+        byte[] raw = KEY.getBytes(StandardCharsets.UTF_8);
+        SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+//        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");//"算法/模式/补码方式"
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding","BC");//"算法/模式/补码方式"
+        //使用CBC模式，需要一个向量iv，可增加加密算法的强度
+        IvParameterSpec ips = new IvParameterSpec(IV.getBytes());
+//        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, (AlgorithmParameters) null);
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ips );
+        byte[] encrypted = cipher.doFinal(content.getBytes());
+        return new BASE64Encoder().encode(encrypted);
+    }
+
+    //解密
+    public static String Decrypt(String content) {
+        try {
+            byte[] raw = KEY.getBytes(StandardCharsets.UTF_8);
+            SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+//            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            IvParameterSpec ips = new IvParameterSpec(IV.getBytes());
+//            cipher.init(Cipher.DECRYPT_MODE, skeySpec, (AlgorithmParameters) null);
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ips);
+            byte[] encrypted1 = new BASE64Decoder().decodeBuffer(content);
+            try {
+                byte[] original = cipher.doFinal(encrypted1);
+                return new String(original);
+            } catch (Exception e) {
+                System.out.println(e);
+                return null;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+            return null;
+        }
+    }
+
+    //获取参数的字典排序
+    private static String getOrderMap(Map<String,Object> maps){
+        List<String> paramNames = new ArrayList<String>();
+        for(Map.Entry<String,Object> entry : maps.entrySet()){
+            paramNames.add(entry.getValue().toString());
+        }
+        Collections.sort(paramNames);
+        StringBuilder paramStr = new StringBuilder();
+        for(String paramName : paramNames){
+            paramStr.append(paramName);
+        }
+        return paramStr.toString();
+    }
+
+}
+
+
+
+
+
+
+package com.paul.testaes;
+
+import java.net.URLDecoder;
+import java.security.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.alibaba.fastjson.JSON;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+public class TestAes {
+    private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
+    //加密
+    public static byte[] AES_cbc_encrypt(byte[] srcData,byte[] key,byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchProviderException {
+        SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+        Security.addProvider(new BouncyCastleProvider());
+        Cipher cipher = Cipher.getInstance(ALGORITHM,"BC");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
+        return cipher.doFinal(srcData);
+    }
+
+    //解密
+    public static byte[] AES_cbc_decrypt(byte[] encData,byte[] key,byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException {
+        SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv));
+        return cipher.doFinal(encData);
+    }
+
+    public static String getToken(String uid) throws Exception {
+        Map<String,Object> map = new HashMap<>(4);
+        map.put("user_id", uid);
+        Long content = System.currentTimeMillis()/1000+60*60*24*3;
+        map.put("time", content);
+        String token = JSON.toJSONString(map);
+        String key = "397A6FF199BFBB0738182C94BAC2570E";
+        String iv = "397A6FF199BFBB07";
+        byte[] encStr = AES_cbc_encrypt(token.getBytes(),key.getBytes(),iv.getBytes());
+        String tokenSrc = Base64.getEncoder().encodeToString(encStr);
+        return tokenSrc;
+    }
+
+    public static void main(String[] args) throws Exception {
+
+
+        String srcStr = "{\"time\":1628752402,\"user_id\":\"7f16c250-cf14-4726-966e-8efdb761fea3\"}";
+//        System.out.println(srcStr);
+//
+        String key = new String("397A6FF199BFBB0738182C94BAC2570E");
+        String iv = new String("397A6FF199BFBB07");
+//        //设置key 全8，iv，全1，这里测试用
+//
+//        byte[] encbt = AES_cbc_encrypt(srcStr.getBytes(),key.getBytes(),iv.getBytes());
+//        String token = Base64.getEncoder().encodeToString(encbt);
+//        System.out.println(token);
+//        String urlString = URLEncoder.encode(token, "utf-8");
+//        System.out.println("---------------");
+//        System.out.println(urlString);
+        System.out.println(getToken("7f16c250-cf14-4726-966e-8efdb761fea3"));
+
+        String deUrlString = URLDecoder.decode("PmJEU%2FL1Wnf0O7NIDGh7ln87DKySZL7C%2BDle3XQmgTdLC3I9IW4uIimldaxpwQctwzJGAQqPKc4Zw7C7LUheZ00zqjT7KKJw2l%2FfBXuECS3HGl9TgSvA93dzUGQFV43s8zpQorSDYBqHmNc6WdxXCAcQirWr2Auhv2MrkBTRvKdVTPnn33NztdrVvYt%2BWRQs","utf-8");
+        byte[] deToken = Base64.getDecoder().decode(deUrlString.getBytes());
+        byte[] decbt = AES_cbc_decrypt(deToken,key.getBytes(),iv.getBytes());
+        String decStr = new String(decbt);
+        System.out.println(decStr);
+
+        if(srcStr.equals(decStr))
+        {
+            System.out.println("TEST PASS");
+        }else
+        {
+            System.out.println("TEST NO PASS");
+        }
+    }
+}
+
+
+
+
+
+
+
+package com.paul.aes;
+
+/**
+ * @Title: AESUtils.java
+ * @Package com.guanhuaWang.util.AES
+ * @Description: AES密码工具类
+ * @author Guanhua Wang
+ * @date 2019年1月15日16:22:57
+ * @version V1.0
+ */
+
+import com.alibaba.fastjson.JSON;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Security;
+import java.security.spec.KeySpec;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author GuanHua Wang
+ * @ClassName: AESUtils
+ * @Description: aes对称加密解密工具类, 注意密钥不能随机生机, 不同客户端调用可能需要考虑不同Provider,
+ * 考虑安卓与IOS不同平台复杂度,简化不使用Provider
+ * @date 2019年1月15日16:00:39
+ */
+public class AESCBCPublishDevelop {
+
+    private static String secretKey = "397A6FF199BFBB0738182C94BAC2570E";
+    private static String salt = "397A6FF199BFBB07";
+
+    static {
+        Security.setProperty("crypto.policy", "unlimited");
+             }
+    public static String encrypt(String strToEncrypt, String secret)
+    {
+        try
+        {
+            byte[] iv = { 3, 9, 7, 'A', 6, 'F', 'F', 1, 9, 9, 'B', 'F', 'B', 'B', 0, 7 };
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(secretKey.toCharArray(), salt.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+            return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error while encrypting: " + e.toString());
+        }
+        return null;
+    }
+
+    public static String decrypt(String strToDecrypt, String secret) {
+        try
+        {
+            byte[] iv = { 3, 9, 7, 'A', 6, 'F', 'F', 1, 9, 9, 'B', 'F', 'B', 'B', 0, 7 };
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(secretKey.toCharArray(), salt.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+        }
+        catch (Exception e) {
+            System.out.println("Error while decrypting: " + e.toString());
+        }
+        return null;
+    }
+    public static String getToken(String uid) throws Exception {
+        Map<String,Object> map = new HashMap<>(4);
+        map.put("user_id", uid);
+        Long content = System.currentTimeMillis()/1000+60*60*24*3;
+        map.put("time", content);
+        String token = JSON.toJSONString(map);
+        return encrypt(token,secretKey);
+    }
+
+    public static void main(String[] args) throws Exception {
+        String originalString = "7ffb7220-b852-11eb-9a8e-f55b5dc96617";
+
+        String encryptedString = getToken("7ffb7220-b852-11eb-9a8e-f55b5dc96617") ;
+        String decryptedString = decrypt("SEgergN3tK8zh7q6Tz99nhA9jy6uJ3H3nTkx9rOlSnHfm21ejtTeJx5jeo2b8Yrz", secretKey) ;
+
+        System.out.println(originalString);
+        System.out.println(encryptedString);
+        System.out.println(decryptedString);
+    }
+
+}
